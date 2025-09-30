@@ -199,7 +199,12 @@ const AdminMenuItems: IAppMenuItem[] = [
         label: "Admin Processes",
         link: "/me/processes",
         Icon: () => <IntegrationInstructionsIcon/>,
-    }
+    },
+    {
+        label: "Users",
+        link: "/me/users",
+        Icon: () => <Groups3Icon/>,
+    },
 ];
 
 export const MENU_ITEMS_MAP: Partial<Record<MenuItemsMapKey, IAppMenuItem[]>> =

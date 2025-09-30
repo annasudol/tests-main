@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../models";
+import { Op } from "sequelize";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { Secret } from "jsonwebtoken";
@@ -47,9 +48,9 @@ class UserController {
     const password = crypto.randomBytes(8).toString("hex"); //random string for password
     console.log(password);
     const username = first + "." + second;
-    var suffix = 1;
-    var record = await User.findOne({ where: { username } });
-    var temp = username;
+    let suffix = 1;
+    let record = await User.findOne({ where: { username } });
+    let temp = username;
     if (record) {
       while (record) {
         temp = username + suffix;
@@ -91,25 +92,79 @@ class UserController {
   }
 
   async getAll(
-    req: Request<{ start: string; limit: string }>,
+    req: Request<unknown, unknown, unknown, { page?: string; limit?: string; search?: string; roleId?: string }>,
     res: Response<BaseResponse>,
     next: NextFunction
   ) {
     try {
-      const records = await User.findAll();
+      const { page = "1", limit = "10", search = "", roleId } = req.query;
+      const parsedPage = Math.max(parseInt(page as string, 10) || 1, 1);
+      const parsedLimit = Math.max(parseInt(limit as string, 10) || 10, 1);
+      const offset = (parsedPage - 1) * parsedLimit;
 
-      const { start, limit } = req.params;
-      const parsedStart = parseInt(start, 10);
-      const parsedLimit = parseInt(limit, 10);
-      const paginatedData = records.slice(
-        parsedStart,
-        parsedStart + parsedLimit
-      );
+      const where: Record<string, unknown> = {};
+      if (search) {
+        (where as Record<string, unknown>)[Op.or as unknown as string] = [
+          { username: { [Op.like]: `%${search}%` } },
+          { email: { [Op.like]: `%${search}%` } },
+          { name: { [Op.like]: `%${search}%` } },
+        ];
+      }
+      if (roleId) {
+        where.roleId = parseInt(roleId as string, 10);
+      }
+
+      const { rows, count } = await User.findAndCountAll({
+        where,
+        offset,
+        limit: parsedLimit,
+        order: [["id", "DESC"]],
+        attributes: ["id", "username", "email", "name", "roleId"],
+      });
+
       return res.json({
         success: true,
         status: res.statusCode,
         message: "Users:",
-        data: paginatedData,
+        data: {
+          items: rows,
+          total: count,
+          page: parsedPage,
+          limit: parsedLimit,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async updateUser(
+    req: Request<{ id: string }, unknown, { name?: string; email?: string; roleId?: number }>,
+    res: Response<BaseResponse>,
+    next: NextFunction
+  ) {
+    try {
+      const { id } = req.params;
+      const { name, email, roleId } = req.body;
+      const [affected] = await User.update(
+        { name, email, roleId },
+        { where: { id: parseInt(id, 10) } }
+      );
+      if (!affected)
+        return res.status(404).json({
+          success: false,
+          status: 404,
+          message: "User not found",
+        });
+      const updated = await User.findOne({
+        where: { id: parseInt(id, 10) },
+        attributes: ["id", "username", "email", "name", "roleId"],
+      });
+      return res.json({
+        success: true,
+        status: res.statusCode,
+        message: "User updated",
+        data: updated,
       });
     } catch (err) {
       next(err);
@@ -118,7 +173,7 @@ class UserController {
 
   async deleteUserByPK(req: Request, res: Response) {
     try {
-      let { username } = req.params;
+      const { username } = req.params;
       const deletedUser = await User.destroy({
         where: { username },
       });
@@ -181,8 +236,7 @@ class UserController {
   };
   enterData = async (
     req: Request,
-    res: Response<BaseResponse>,
-    next: NextFunction
+    res: Response<BaseResponse>
   ) => {
     return res.json({
       success: true,
@@ -193,8 +247,7 @@ class UserController {
 
   resetForgottenPassword = async (
     req: Request,
-    res: Response<BaseResponse>,
-    next: NextFunction
+    res: Response<BaseResponse>
   ) => {
     const { newPassword, confirmNewPassword } = req.body;
 
@@ -222,8 +275,7 @@ class UserController {
 
   resetPassword = async (
     req: Request,
-    res: Response<BaseResponse>,
-    next: NextFunction
+    res: Response<BaseResponse>
   ) => {
     try {
       const { oldPassword, newPassword, confirmNewPassword } = req.body;
@@ -260,7 +312,7 @@ class UserController {
         }
       }
     } catch (err) {
-      next(err);
+      return res.status(500).json({ success: false, status: 500, message: "Internal Server Error" });
     }
   };
 }

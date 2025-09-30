@@ -80,6 +80,7 @@ const AllTrainingStudent = lazy(() => import('src/pages/Student/AllTraining'));
 const Progress = lazy(() => import('src/pages/Student/Progress'));
 
 const AddFaculty = lazy(() => import('src/pages/Admin/AddFaculty'));
+const Admin = lazy(() => import('src/pages/Admin'));
 const Charts = lazy(() => import('src/pages/university/Charts'));
 const ForgetPassword = lazy(() => import('src/pages/ForgetPassword'));
 const ResetPassword = lazy(() => import('src/pages/resetPassword'));
@@ -120,6 +121,7 @@ const AppRoutes: FC = () => {
 
           <Route element={<ProtectedRoute allowedRoles={[SuperAdmin]} />}>
             <Route path="processes" element={<AddFaculty />} />
+            <Route path="users" element={<Admin />} />
           </Route>
 
           <Route

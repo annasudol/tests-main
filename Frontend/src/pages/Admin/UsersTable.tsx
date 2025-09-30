@@ -21,7 +21,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { deleteUser, getUsers, updateUser } from "src/api";
 import { UserRole } from "src/constants/auth";
 
-type UserItem = { id: number; username: string; email: string; name: string; roleId: number };
+type UserItem = { id: number; username: string; email: string; name: string; phoneNumber?: string; roleId: number };
 
 const roleOptions = [
   { id: UserRole.SuperAdmin, label: "Super Admin" },
@@ -61,7 +61,7 @@ const UsersTable: React.FC = () => {
   const total = data?.total ?? 0;
 
   return (
-    <Paper sx={{ p: 2 }}>
+    <Paper sx={{ p: 2, width: { sm: "40rem", md: "60rem" } }}>
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField
           size="small"

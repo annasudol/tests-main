@@ -7,7 +7,7 @@ import verifyAccessToken from '../middlewares/verifyAccessToken';
 import verifyRoles from '../middlewares/verifyRole';
 import { UserRoleEnum } from '../enums';
 const router = express.Router();
-const upload = multer({ dest: '../uploads/' });
+const upload = multer({ dest: 'uploads/' });
 
 // Protect upload endpoint with SuperAdmin role
 router.post('/upload', verifyAccessToken, verifyRoles([UserRoleEnum.SUPER_ADMIN]), upload.single('file'), async (req: StudentRequestBody, res: Response, next: NextFunction) => {
@@ -17,7 +17,7 @@ router.post('/upload', verifyAccessToken, verifyRoles([UserRoleEnum.SUPER_ADMIN]
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    const filePath = `../uploads/${file.filename}`;
+    const filePath = `uploads/${file.filename}`;
     const data: Record<string, unknown>[] = [];
 
     const validMimeTypes = [
@@ -35,14 +35,22 @@ router.post('/upload', verifyAccessToken, verifyRoles([UserRoleEnum.SUPER_ADMIN]
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][];
 
+      // Debug: Log the headers
+      console.log('Excel headers:', jsonData[0]);
+
       jsonData.forEach((row: unknown[]) => {
         const parsedRow: Record<string, unknown> = {};
         row.forEach((cell, index) => {
           const headerCell = jsonData[0][index] as string;
-          parsedRow[headerCell] = cell;
+          // Trim whitespace and normalize column names
+          const normalizedHeader = headerCell?.toString().trim();
+          parsedRow[normalizedHeader] = cell;
         });
         data.push(parsedRow);
       });
+      
+      // Debug: Log first few data rows
+      console.log('Parsed data sample:', data.slice(0, 3));
       let flag: string | undefined = "ok";
       const ids: string[] = [];
       for (let i = 1; i < data.length; i++) {
@@ -53,6 +61,17 @@ router.post('/upload', verifyAccessToken, verifyRoles([UserRoleEnum.SUPER_ADMIN]
         req.body.email = data[i].email as string;
         req.body.phoneNumber = data[i].phoneNumber as string;
         req.body.department = data[i].department as string;
+        
+        // Debug logging
+        console.log(`Processing row ${i}:`, {
+          name: req.body.name,
+          id: req.body.id,
+          email: req.body.email,
+          phoneNumber: req.body.phoneNumber,
+          department: req.body.department,
+          rawData: data[i]
+        });
+        
         flag = await studentController.addStudent(req, res, next);
         console.log(flag);
         if (flag && flag !== "ok") {

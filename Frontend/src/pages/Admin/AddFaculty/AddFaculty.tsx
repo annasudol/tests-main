@@ -246,9 +246,9 @@ const AddFaculty: React.FC = () => {
   const downloadTemplate = () => {
     // Create sample CSV content that can be opened in Excel
     const csvContent = `name,id,email,phoneNumber,department
-John Doe,12345678,john.doe@example.com,+1234567890,Computer Science
-Jane Smith,87654321,jane.smith@example.com,+9876543210,Engineering
-Bob Johnson,11223344,bob.johnson@example.com,+5555555555,Mathematics`;
+John Zoe,934556,john.doe@example.com,+1234567890,Computer Science
+Jane Smith,9234557,jane.smith@example.com,+9876543210,Engineering
+Bob Jon,9233353,bob.johnson@example.com,+5555555555,Mathematics`;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

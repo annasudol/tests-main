@@ -22,20 +22,7 @@ export const sendEmail = async (dest: string, subject: string, message: string) 
       }
     });
 
-    //   const mailOptions = {
-    //             from: auth.user,
-    //             to: email,
-    //             subject: subject,
-    //             text: text
-    //         };
-    //         transporter.sendMail(mailOptions, function (error, info) {
-    //             if (error) {
-    //                 console.log(error);
-    //             } else {
-    //                 console.log('Email sent: ' + info.response);
-    //             }
-
-    let info = await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: "trainingsytem11@gmail.com",
       to: dest, // list of receivers
       subject: subject, // Subject line

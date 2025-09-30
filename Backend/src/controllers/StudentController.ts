@@ -19,6 +19,16 @@ class studentController {
   ) {
     try {
       const { id, name, email, phoneNumber, department } = req.body;
+      
+      // Debug logging
+      console.log('StudentController.addStudent received:', {
+        id,
+        name,
+        email,
+        phoneNumber,
+        department
+      });
+      
       let nameArray = name.split(" ");
       const firstName = nameArray[0]; // Get the first section
       const lastName = nameArray[nameArray.length - 1];
@@ -48,6 +58,15 @@ class studentController {
         phoneNumber,
         userId: user,
         department,
+      });
+      
+      // Debug logging - what was actually saved
+      console.log('Student record created:', {
+        id: studentRecord.id,
+        name: studentRecord.name,
+        phoneNumber: studentRecord.phoneNumber,
+        department: studentRecord.department,
+        userId: studentRecord.userId
       });
 
       if (studentRecord) {

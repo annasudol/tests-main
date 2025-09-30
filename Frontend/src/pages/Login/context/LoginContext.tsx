@@ -1,3 +1,4 @@
+import * as React from "react";
 import {createContext, useContext, FC, ReactNode, useState} from "react";
 import {DialogType} from "../constants";
 
@@ -5,6 +6,8 @@ export interface LoginContextValues {
     openDialog: DialogType | null;
     onOpenDialog: (dialog: DialogType) => void;
     onCloseDialog: () => void;
+    rememberMe: boolean;
+    setRememberMe: (value: boolean) => void;
 }
 
 const LoginContext = createContext<LoginContextValues | null>(null);
@@ -24,11 +27,14 @@ export interface LoginProviderProps {
 export const LoginProvider: FC<LoginProviderProps> = ({children}) => {
 
     const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
+    const [rememberMe, setRememberMe] = useState<boolean>(false);
 
     const contextValues: LoginContextValues = {
         openDialog,
         onOpenDialog: (dialog: DialogType) => setOpenDialog(dialog),
         onCloseDialog: () => setOpenDialog(null),
+        rememberMe,
+        setRememberMe,
     }
 
     return (

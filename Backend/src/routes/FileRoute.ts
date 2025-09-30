@@ -1,13 +1,16 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Response, NextFunction } from 'express';
 import multer from 'multer';
 import xlsx from 'xlsx';
 import studentController from "../controllers/StudentController"
 import { StudentRequestBody } from '../types';
+import verifyAccessToken from '../middlewares/verifyAccessToken';
+import verifyRoles from '../middlewares/verifyRole';
+import { UserRoleEnum } from '../enums';
 const router = express.Router();
 const upload = multer({ dest: '../uploads/' });
 
-
-router.post('/upload', upload.single('file'), async (req: StudentRequestBody, res: Response, next: NextFunction) => {
+// Protect upload endpoint with SuperAdmin role
+router.post('/upload', verifyAccessToken, verifyRoles([UserRoleEnum.SUPER_ADMIN]), upload.single('file'), async (req: StudentRequestBody, res: Response, next: NextFunction) => {
   try {
     const file = req.file;
     if (!file) {
@@ -15,28 +18,33 @@ router.post('/upload', upload.single('file'), async (req: StudentRequestBody, re
     }
 
     const filePath = `../uploads/${file.filename}`;
-    const data: any[] = [];
+    const data: Record<string, unknown>[] = [];
 
-    if (
-      file.mimetype ===
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ) {
-      // Parse Excel file
+    const validMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv', // .csv
+      'application/csv',
+      'text/plain' // some systems send CSV as text/plain
+    ];
+
+    if (validMimeTypes.includes(file.mimetype) || file.originalname.match(/\.(xlsx|xls|csv)$/i)) {
+      // Parse Excel or CSV file using xlsx library (supports both)
       const workbook = xlsx.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][];
 
       jsonData.forEach((row: unknown[]) => {
-        const parsedRow: { [key: string]: any } = {};
+        const parsedRow: Record<string, unknown> = {};
         row.forEach((cell, index) => {
           const headerCell = jsonData[0][index] as string;
           parsedRow[headerCell] = cell;
         });
         data.push(parsedRow);
       });
-      let flag: any = true;
-      let ids: string[] = [];
+      let flag: string | undefined = "ok";
+      const ids: string[] = [];
       for (let i = 1; i < data.length; i++) {
         if (Object.keys(data[i]).length === 0)
           continue;
@@ -47,7 +55,7 @@ router.post('/upload', upload.single('file'), async (req: StudentRequestBody, re
         req.body.department = data[i].department as string;
         flag = await studentController.addStudent(req, res, next);
         console.log(flag);
-        if (flag != "ok") {
+        if (flag && flag !== "ok") {
           ids.push(flag);
         }
       }
@@ -66,10 +74,18 @@ router.post('/upload', upload.single('file'), async (req: StudentRequestBody, re
         });
 
     } else {
-      return res.status(400).json({ message: 'Invalid file format' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid file format. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file' 
+      });
     }
   } catch (err) {
-    console.log("error");
+    console.error("Upload error:", err);
+    return res.status(500).json({ 
+      success: false,
+      message: 'Failed to process file. Please check the file format and try again.',
+      error: err instanceof Error ? err.message : 'Unknown error'
+    });
   }
 });
 

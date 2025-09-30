@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -19,9 +19,16 @@ import { LoginFormProps } from "../types";
 
 const LoginForm: FC<LoginFormProps> = ({ isLoggingIn }) => {
   const { isValid } = useFormikContext<LoginRequestBody>();
-  const { onOpenDialog } = useLoginContext();
+  const { onOpenDialog, setRememberMe } = useLoginContext();
+  const [rememberMeChecked, setRememberMeChecked] = useState(false);
 
   const handleOpenForgotPasswordDialog = () => onOpenDialog(DialogType.FORGET_PASSWORD);
+
+  const handleRememberMeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = event.target.checked;
+    setRememberMeChecked(checked);
+    setRememberMe(checked);
+  };
 
   return (
     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -55,7 +62,14 @@ const LoginForm: FC<LoginFormProps> = ({ isLoggingIn }) => {
           <TextFieldWrapper name="username" label="Username" sx={{ mb: 2.5 }} />
           <TextFieldWrapper name="password" label="Password" type="password" />
           <FormControlLabel
-            control={<Checkbox value="remember" color="primary" size="small" />}
+            control={
+              <Checkbox 
+                checked={rememberMeChecked}
+                onChange={handleRememberMeChange}
+                color="primary" 
+                size="small" 
+              />
+            }
             label="Remember me"
             sx={{
               my: 1,

@@ -9,11 +9,10 @@ export const addFaculty = async (body: AddFacultyBody) => {
     return axiosInstance.post<AddFieldResponse>(url, body).then(res => res.data);
 };
 
-export const uploadExcelFile = async (body: AploadExcelFileBody) => {
+export const uploadExcelFile = async (file: File) => {
     const url = "/admin/upload";
     const formData = new FormData();
-    //@ts-ignore
-    formData.append('file', body);
+    formData.append('file', file);
     return axiosInstance.post<UploadFileResponse>(url, formData, {
             headers: {
               'Content-Type': 'multipart/form-data',

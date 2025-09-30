@@ -1,6 +1,5 @@
-import react from "react";
 import {useFormik} from "formik";
-import {INITIAL_FORM_STATE, LoginMutationKey} from "src/pages/Login/constants";
+import {INITIAL_FORM_STATE} from "src/pages/Login/constants";
 import {validationSchema} from "src/pages/Login/schema";
 import {useMutation} from "@tanstack/react-query";
 import {login} from "src/pages/Login/api";
@@ -9,7 +8,7 @@ import extractErrorMessage from "src/utils/extractErrorMessage";
 import useSnackbar from "src/hooks/useSnackbar";
 import useAccountContext from "src/hooks/useAccountContext";
 
-const useLoginForm = () => {
+const useLoginForm = (rememberMe: boolean = false) => {
     const {showSnackbar} = useSnackbar();
     const {onLogin} = useAccountContext();
 
@@ -18,11 +17,24 @@ const useLoginForm = () => {
             onSuccess: (data) => {
                 console.log(data.accessToken);
                 // ----------
-                localStorage.setItem("access-token", data.accessToken);
-                localStorage.setItem("user", JSON.stringify(data.data));
+                // Use localStorage if "Remember Me" is checked, otherwise sessionStorage
+                const storage = rememberMe ? localStorage : sessionStorage;
+                
+                // Clear the other storage to avoid conflicts
+                if (rememberMe) {
+                    sessionStorage.removeItem("access-token");
+                    sessionStorage.removeItem("user");
+                } else {
+                    localStorage.removeItem("access-token");
+                    localStorage.removeItem("user");
+                }
+                
+                storage.setItem("access-token", data.accessToken);
+                storage.setItem("user", JSON.stringify(data.data));
                 // ----------
-                const {username, roleId} = data?.data;
-                onLogin(data?.data, {shouldNavigate: true});
+                if (data?.data) {
+                    onLogin(data.data, {shouldNavigate: true});
+                }
                 showSnackbar({severity: "success", message: data.message});
             },
             onError: (error: AxiosBaseError) => {

@@ -42,7 +42,8 @@ export const AccountProvider: FC<AccountProviderProps> = ({children}) => {
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
     const getUser = () => {
-        const userStr = localStorage.getItem("user");
+        // Check both localStorage and sessionStorage
+        const userStr = localStorage.getItem("user") || sessionStorage.getItem("user");
         if (userStr) return JSON.parse(userStr) as User;
         return null;
     }
@@ -58,8 +59,11 @@ export const AccountProvider: FC<AccountProviderProps> = ({children}) => {
 
     const handleLogout = () => {
         setUser(null);
+        // Clear from both localStorage and sessionStorage
         localStorage.removeItem("user");
         localStorage.removeItem("access-token");
+        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("access-token");
         setIsSidebarOpen(false);
         navigate("login", {replace: true});
     };

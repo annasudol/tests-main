@@ -1,7 +1,13 @@
 import nodemailer from "nodemailer";
-export const sendEmail = (dest: string, subject: string, message: string) => {
+export const sendEmail = async (dest: string, subject: string, message: string) => {
   try {
-    let transporter = nodemailer.createTransport({
+    // Validate recipient email
+    if (!dest || dest.trim() === "" || !dest.includes("@")) {
+      console.error("Invalid recipient email address:", dest);
+      return;
+    }
+
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: "trainingsytem11@gmail.com"
@@ -29,16 +35,16 @@ export const sendEmail = (dest: string, subject: string, message: string) => {
     //                 console.log('Email sent: ' + info.response);
     //             }
 
-    let info = transporter.sendMail({
+    let info = await transporter.sendMail({
       from: "trainingsytem11@gmail.com",
       to: dest, // list of receivers
       subject: subject, // Subject line
       text: message,
     });
-    console.log(info);
+    console.log("Email sent successfully:", info.messageId);
   }
   catch (err) {
-    console.log(err)
+    console.error("Failed to send email:", err)
   }
 }
 export default { sendEmail }; 

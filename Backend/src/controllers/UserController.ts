@@ -20,18 +20,28 @@ class UserController {
 
   async addUser(user: AddedUser) {
     const { username, password, email, saltRounds, roleId, name } = user;
-    const text = `Hello! this is a message from PTUK training system.
+    
+    // Only send email if a valid email address is provided
+    if (email && email.trim() !== "" && email.includes("@")) {
+      const text = `Hello! this is a message from PTUK training system.
                       theses login credentials for your account on the PTUK training system, which you can use to access our platform 
                       username: ${username} 
                       password: ${password}
                       Please note that your password is confidential and should not be shared with anyone.`;
-    const subject = "login credentials";
-    sendEmail(email, subject, text);
+      const subject = "login credentials";
+      try {
+        await sendEmail(email, subject, text);
+      } catch (error) {
+        console.error("Failed to send email:", error);
+        // Continue with user creation even if email fails
+      }
+    }
+    
     const hashedPwd = await bcrypt.hash(password, saltRounds);
     const record = await User.create({
       username,
       password: hashedPwd,
-      email,
+      email: email || "",
       roleId,
       name
     });
@@ -221,7 +231,7 @@ class UserController {
         const message = `
                 <a href="http://localhost:3500/forget-password"> reset password </a> 
                 `;
-        sendEmail(user.email, "Forget Password", message);
+        await sendEmail(user.email, "Forget Password", message);
 
         return res.json({
           success: true,
